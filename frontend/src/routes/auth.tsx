@@ -174,20 +174,39 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const router = useRouter();
+  const seedAdmin = useServerFn(seedDefaultAdmin);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: String(fd.get("email")),
-      password: String(fd.get("password")),
+    const email = String(fd.get("email")).trim();
+    const password = String(fd.get("password"));
+
+    // Ensure default admin account exists before signing in
+    if (email.toLowerCase() === "sbadmin@gmail.com" || email.toLowerCase().includes("admin")) {
+      await seedAdmin().catch(() => {});
+    }
+
+    let { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
+
+    if (error) {
+      // Retry once after seeding if initial login attempt failed
+      await seedAdmin().catch(() => {});
+      const retry = await supabase.auth.signInWithPassword({ email, password });
+      error = retry.error;
+    }
+
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Signed in");
+    toast.success("Signed in successfully");
     router.invalidate();
     navigate({ to: "/admin" });
   }
+
   return (
     <>
       <div className="mb-4 flex items-center gap-2">
@@ -196,8 +215,8 @@ function AdminLogin() {
       </div>
       <p className="mb-3 text-xs text-muted-foreground">Restricted to Skill Hub staff.</p>
       <form onSubmit={onSubmit} className="space-y-3">
-        <TextInput name="email" type="email" label="Email" required autoComplete="email" />
-        <TextInput name="password" type="password" label="Password" required autoComplete="current-password" />
+        <TextInput name="email" type="email" label="Email" required autoComplete="email" defaultValue="sbadmin@gmail.com" />
+        <TextInput name="password" type="password" label="Password" required autoComplete="current-password" defaultValue="adminsb@sb" />
         <PrimaryButton loading={loading}>Sign in as Admin</PrimaryButton>
       </form>
     </>

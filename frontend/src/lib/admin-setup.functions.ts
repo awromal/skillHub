@@ -6,6 +6,21 @@ export const seedDefaultAdmin = createServerFn({ method: "POST" }).handler(async
     const email = "sbadmin@gmail.com";
     const password = "adminsb@sb";
 
+    const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+    const existing = list?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
+    if (existing) {
+      try {
+        await supabaseAdmin.from("user_roles").upsert(
+          { user_id: existing.id, role: "admin" },
+          { onConflict: "user_id,role" },
+        );
+      } catch {
+        // ignore if table doesn't exist
+      }
+      return { seeded: true, userId: existing.id };
+    }
+
     const { data: created } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,

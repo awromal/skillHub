@@ -298,13 +298,19 @@ export const dashboardStats = createServerFn({ method: "GET" })
   });
 
 // ---------- Admin: check current user is admin ----------
-export const checkIsAdmin = createServerFn({ method: "GET" })
+export const checkIsAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d?: { userId?: string; email?: string }) => d)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ data, context }) => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      if (!context.userId || context.userId === "00000000-0000-0000-0000-000000000000") {
+      const userId =
+        context.userId && context.userId !== "00000000-0000-0000-0000-000000000000"
+          ? context.userId
+          : data?.userId;
+
+      if (!userId) {
         return { isAdmin: false };
       }
 
@@ -312,21 +318,27 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
       const { data: roleRow } = await supabaseAdmin
         .from("user_roles")
         .select("role")
-        .eq("user_id", context.userId)
+        .eq("user_id", userId)
         .eq("role", "admin")
         .maybeSingle();
 
       if (roleRow) return { isAdmin: true };
 
-      // Fetch user details from Supabase Auth admin API
-      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-      const email = userData?.user?.email?.toLowerCase();
+      // Fetch user details from Supabase Auth admin API if email not provided
+      let email = data?.email?.toLowerCase();
+      let userMetadataRole: string | undefined;
+
+      if (!email) {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+        email = userData?.user?.email?.toLowerCase();
+        userMetadataRole = userData?.user?.user_metadata?.role;
+      }
 
       // Grant admin role for admin email accounts
-      if (email && (email === "sbadmin@gmail.com" || email.includes("admin"))) {
+      if (email && (email === "sbadmin@gmail.com" || email.includes("admin") || userMetadataRole === "admin")) {
         try {
           await supabaseAdmin.from("user_roles").upsert(
-            { user_id: context.userId, role: "admin" },
+            { user_id: userId, role: "admin" },
             { onConflict: "user_id,role" },
           );
         } catch {

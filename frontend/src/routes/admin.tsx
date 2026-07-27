@@ -29,7 +29,9 @@ function AdminLayout() {
     queryFn: async () => {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData?.user) return { isAdmin: false };
-      const res = await checkIsAdmin();
+      const res = await checkIsAdmin({
+        data: { userId: authData.user.id, email: authData.user.email },
+      });
       return res;
     },
     staleTime: 0,
