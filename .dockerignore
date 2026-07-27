@@ -1,0 +1,11 @@
+node_modules
+.output
+.vercel
+.netlify
+.git
+.github
+.env
+.env.local
+dist
+build
+npm-debug.log

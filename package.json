@@ -6,9 +6,13 @@
     "dev": "npm --prefix frontend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
-    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "build": "npx cross-env NITRO_PRESET=vercel npm --prefix frontend run build",
+    "build:vercel": "npx cross-env NITRO_PRESET=vercel npm --prefix frontend run build",
+    "build:netlify": "npx cross-env NITRO_PRESET=netlify npm --prefix frontend run build",
+    "build:node": "npx cross-env NITRO_PRESET=node-server npm --prefix frontend run build",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
+    "build:dev": "npm --prefix frontend run build:dev",
     "start:frontend": "npm --prefix frontend run start",
     "start:backend": "npm --prefix backend run start",
     "preview": "npm --prefix frontend run preview",
@@ -16,6 +20,7 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "prettier": "^3.7.3"
   }
 }

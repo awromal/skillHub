@@ -99,3 +99,49 @@ bun run build
 | Database | Supabase (PostgreSQL) |
 | Auth | Supabase Auth |
 | Build Tool | Vite + Bun |
+
+## Deployment Guide
+
+### Option 1: Deploying to Vercel (Recommended)
+
+1. **Push your project to GitHub / GitLab / Bitbucket**.
+2. **Import Project into Vercel**:
+   - Go to [Vercel Dashboard](https://vercel.com/new) and select your repository.
+   - Vercel will automatically read `vercel.json`.
+3. **Configure Environment Variables** in Vercel settings:
+   - `VITE_SUPABASE_URL`: Your Supabase URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
+   - `VITE_SUPABASE_PROJECT_ID`: Your Supabase project ID
+   - `SUPABASE_URL`: Your Supabase URL
+   - `SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (Secret)
+4. **Deploy**: Click **Deploy**. Vercel will build and launch your full-stack app.
+
+---
+
+### Option 2: Deploying via Docker (Render / Railway / Fly.io / VPS)
+
+1. Build the Docker image:
+   ```bash
+   docker build -t college-course-portal .
+   ```
+2. Run the Docker container:
+   ```bash
+   docker run -p 3000:3000 \
+     -e VITE_SUPABASE_URL="https://your-id.supabase.co" \
+     -e VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key" \
+     -e SUPABASE_URL="https://your-id.supabase.co" \
+     -e SUPABASE_PUBLISHABLE_KEY="your-anon-key" \
+     -e SUPABASE_SERVICE_ROLE_KEY="your-service-role-key" \
+     college-course-portal
+   ```
+
+---
+
+### Option 3: Deploying to Netlify
+
+1. Connect your repository to Netlify.
+2. Netlify will detect `netlify.toml` automatically.
+3. Add the required Supabase Environment Variables in Netlify **Site Settings > Environment variables**.
+4. Trigger deploy!
+
