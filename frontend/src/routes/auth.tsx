@@ -44,26 +44,28 @@ function AuthPage() {
 
         <div className="rounded-2xl bg-card p-4 sm:p-6 shadow-2xl ring-1 ring-white/10">
           {/* Tab Switcher */}
-          <div className="mb-6 flex rounded-xl bg-secondary p-1">
-            <Link
-              to="/auth"
-              search={(s) => ({ ...s, tab: undefined })}
-              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
-                !isAdmin ? "bg-background text-brand shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Student Sign in
-            </Link>
-            <Link
-              to="/auth"
-              search={(s) => ({ ...s, tab: "admin" })}
-              className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
-                isAdmin ? "bg-background text-brand shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Admin Sign in
-            </Link>
-          </div>
+          {!isAdmin && (
+            <div className="mb-6 flex rounded-xl bg-secondary p-1">
+              <Link
+                to="/auth"
+                search={(s) => ({ ...s, tab: undefined })}
+                className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                  !isAdmin ? "bg-background text-brand shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Student Sign in
+              </Link>
+              <Link
+                to="/auth"
+                search={(s) => ({ ...s, tab: "admin" })}
+                className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                  isAdmin ? "bg-background text-brand shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin Sign in
+              </Link>
+            </div>
+          )}
 
           {isAdmin ? <AdminPane /> : <StudentPane next={search.next} />}
         </div>
