@@ -137,14 +137,6 @@ function ApplyForm() {
           <Field label="Email" name="email" type="email" required />
           <Field label="Mobile Number" name="phone" type="tel" required />
           <div className="md:col-span-2">
-            <Label>Address</Label>
-            <textarea
-              name="address"
-              rows={3}
-              className="mt-1 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-2"
-            />
-          </div>
-          <div className="md:col-span-2">
             <Label>Selected Course</Label>
             <input
               readOnly
