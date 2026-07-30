@@ -215,8 +215,8 @@ function AdminLogin() {
       </div>
       <p className="mb-3 text-xs text-muted-foreground">Restricted to Skill Hub staff.</p>
       <form onSubmit={onSubmit} className="space-y-3">
-        <TextInput name="email" type="email" label="Email" required autoComplete="email" defaultValue="sbadmin@gmail.com" />
-        <TextInput name="password" type="password" label="Password" required autoComplete="current-password" defaultValue="adminsb@sb" />
+        <TextInput name="email" type="email" label="Email" required autoComplete="off" />
+        <TextInput name="password" type="password" label="Password" required autoComplete="new-password" />
         <PrimaryButton loading={loading}>Sign in as Admin</PrimaryButton>
       </form>
     </>

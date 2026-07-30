@@ -136,8 +136,6 @@ function ApplyForm() {
           <Select label="Gender" name="gender" required options={["Male","Female","Other"]} />
           <Field label="Email" name="email" type="email" required />
           <Field label="Mobile Number" name="phone" type="tel" required />
-          <Field label="Parent Name" name="parent_name" />
-          <Field label="Parent Phone" name="parent_phone" type="tel" />
           <div className="md:col-span-2">
             <Label>Address</Label>
             <textarea

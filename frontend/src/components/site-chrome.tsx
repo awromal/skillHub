@@ -95,13 +95,7 @@ export function SiteHeader() {
 
           {user ? (
             <div className="flex items-center gap-1.5">
-              <Link
-                to="/my-applications"
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-accent hover:text-brand"
-              >
-                <UserIcon className="h-3.5 w-3.5" />
-                My Applications
-              </Link>
+
               <button
                 onClick={signOut}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-accent"
@@ -152,13 +146,7 @@ export function SiteHeader() {
             {user && (
               <>
                 <div className="my-1.5 border-t" />
-                <Link
-                  to="/my-applications"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium hover:bg-accent"
-                >
-                  <UserIcon className="h-4 w-4 text-brand-2" /> My Applications
-                </Link>
+
                 <button
                   onClick={() => { setOpen(false); signOut(); }}
                   className="flex items-center gap-2 rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-accent"
@@ -209,15 +197,17 @@ export function SiteFooter() {
           <ul className="space-y-2.5 text-sm opacity-85">
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-brand-accent">📍</span>
-              SB College, Changanassery, Kerala 686101
+              <a href="https://maps.google.com/?q=SB+College,+Changanassery,+Kerala+686101" target="_blank" rel="noopener noreferrer" className="hover:underline hover:opacity-100 transition">
+                SB College, Changanassery, Kerala 686101
+              </a>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0 text-brand-accent">✉️</span>
-              skillhubsb@gmail.com
+              <a href="mailto:skillhubsb@gmail.com" className="hover:underline hover:opacity-100 transition">skillhubsb@gmail.com</a>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0 text-brand-accent">📞</span>
-              +91 481 242 0025
+              <a href="tel:+919961231314" className="hover:underline hover:opacity-100 transition">+91 99612 31314</a>
             </li>
           </ul>
         </div>
@@ -229,7 +219,6 @@ export function SiteFooter() {
             {[
               { href: "/courses", label: "Browse Courses" },
               { href: "/#about", label: "About Skill Hub" },
-              { href: "/my-applications", label: "My Applications" },
               { href: "/auth", label: "Student Login" },
             ].map((l) => (
               <li key={l.href}>
