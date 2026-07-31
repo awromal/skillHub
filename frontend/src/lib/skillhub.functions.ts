@@ -112,6 +112,17 @@ export const submitApplication = createServerFn({ method: "POST" })
     if (courseErr) throw new Error(courseErr.message);
     if (!course) throw new Error("Course not found");
 
+    const { data: existingApp } = await supabaseAdmin
+      .from("applications")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("course_id", course.id)
+      .maybeSingle();
+
+    if (existingApp) {
+      throw new Error("You have already applied for this course.");
+    }
+
     const application_id = generateAppId();
     const { error: insertErr } = await supabaseAdmin.from("applications").insert({
       application_id,
@@ -154,13 +165,42 @@ export const submitApplication = createServerFn({ method: "POST" })
     return { application_id, emailSent };
   });
 
+// ---------- Student: check if applied ----------
+export const checkHasApplied = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { courseId: string }) => z.object({ courseId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: existingApp } = await context.supabase
+      .from("applications")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("course_id", data.courseId)
+      .maybeSingle();
+    return { hasApplied: !!existingApp };
+  });
+
+// ---------- Student: get latest application ----------
+export const getLatestApplication = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("applications")
+      .select("*")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return null;
+    return data;
+  });
+
 // ---------- Student: list my own applications ----------
 export const listMyApplications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("applications")
-      .select("id, application_id, course_name, full_name, email, phone, department, semester, created_at")
+      .select("id, application_id, course_id, course_name, full_name, email, phone, department, semester, created_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);

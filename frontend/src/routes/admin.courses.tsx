@@ -208,6 +208,53 @@ function CourseEditor({
   const save = useServerFn(upsertCourse);
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState(initial?.image_url ?? "");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingImage(true);
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.8));
+          };
+          img.onerror = reject;
+        };
+        reader.onerror = reject;
+      });
+      setImagePreview(dataUrl);
+    } catch (err) {
+      toast.error("Failed to process image");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -224,7 +271,7 @@ function CourseEditor({
           trainer: String(fd.get("trainer") ?? ""),
           seats: Number(fd.get("seats") ?? 0),
           start_date: (String(fd.get("start_date") ?? "") || null),
-          image_url: (String(fd.get("image_url") ?? "") || null),
+          image_url: imagePreview || null,
           status: (String(fd.get("status") ?? "active") as "active" | "inactive"),
         },
       });
@@ -306,24 +353,40 @@ function CourseEditor({
           <div className="space-y-5">
             {/* Image preview */}
             <Card title="Course Image">
-              <div className="aspect-video w-full overflow-hidden rounded-xl border bg-muted">
+              <div className="aspect-video w-full overflow-hidden rounded-xl border bg-muted relative group">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" onError={() => setImagePreview("")} />
                 ) : (
                   <div className="grid h-full place-items-center text-muted-foreground/40">
                     <div className="text-center">
                       <ImageIcon className="mx-auto h-10 w-10" />
-                      <p className="mt-2 text-xs">Paste an image URL below</p>
+                      <p className="mt-2 text-xs">Upload an image or paste a URL below</p>
                     </div>
                   </div>
                 )}
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-brand" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center">
+                   <label className="cursor-pointer bg-white text-black px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-100">
+                     Upload Image
+                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                   </label>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex-1 border-b"></div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">OR</span>
+                <div className="flex-1 border-b"></div>
               </div>
               <div className="mt-3">
                 <label className="label">Image URL</label>
                 <input
                   name="image_url"
                   type="url"
-                  defaultValue={initial?.image_url ?? ""}
+                  value={imagePreview.startsWith("data:") ? "" : imagePreview}
                   placeholder="https://images.unsplash.com/…"
                   onChange={(e) => setImagePreview(e.target.value)}
                   className="mt-1 w-full rounded-lg border bg-background p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-2"

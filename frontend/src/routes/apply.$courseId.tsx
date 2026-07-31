@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link, notFound } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useSuspenseQuery, queryOptions, useQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
-import { getCourse, submitApplication } from "@/lib/skillhub.functions";
+import { getCourse, submitApplication, getLatestApplication, checkHasApplied } from "@/lib/skillhub.functions";
 import { supabase } from "@/integrations/supabase/client";
+import disposableDomains from "disposable-email-domains";
 
 const courseQ = (id: string) =>
   queryOptions({ queryKey: ["course", id], queryFn: () => getCourse({ data: { id } }) });
@@ -46,13 +47,29 @@ function ApplyForm() {
   const [submitting, setSubmitting] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setSignedIn(!!data.user);
+      if (data.user?.email) {
+        setUserEmail(data.user.email);
+      }
       setAuthChecked(true);
     });
   }, []);
+
+  const { data: prevApp } = useQuery({
+    queryKey: ["latest-application"],
+    queryFn: () => getLatestApplication(),
+    enabled: signedIn,
+  });
+
+  const { data: applyStatus } = useQuery({
+    queryKey: ["has-applied", courseId],
+    queryFn: () => checkHasApplied({ data: { courseId } }),
+    enabled: signedIn,
+  });
 
   if (!course) return <div className="py-24 text-center">Course not found.</div>;
   if (!authChecked) return <div className="py-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-brand" /></div>;
@@ -80,20 +97,60 @@ function ApplyForm() {
     );
   }
 
+  if (applyStatus?.hasApplied) {
+    return (
+      <section className="mx-auto max-w-xl px-4 py-16 md:px-8 text-center">
+        <div className="rounded-2xl border bg-card p-8 shadow-sm">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
+             <Check className="h-6 w-6" />
+          </div>
+          <h1 className="mt-4 text-2xl font-bold">Already Applied</h1>
+          <p className="mt-2 text-sm text-muted-foreground">You have already submitted an application for <span className="font-semibold">{course.name}</span>.</p>
+          <Link to="/my-applications" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white hover:bg-brand-2">
+            View My Applications
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     const fd = new FormData(e.currentTarget);
     try {
+      const email = String(fd.get("email") ?? "").trim();
+      
+      const phone = String(fd.get("phone") ?? "").trim();
+      if (!/^\d{10}$/.test(phone)) {
+        toast.error("Mobile number must be exactly 10 digits.");
+        setSubmitting(false);
+        return;
+      }
+
+      const admission_number = String(fd.get("admission_number") ?? "").trim();
+      if (!/^\d{8}$/.test(admission_number)) {
+        toast.error("Admission number must be exactly 8 digits.");
+        setSubmitting(false);
+        return;
+      }
+
+      const roll_number = String(fd.get("roll_number") ?? "").trim();
+      if (!/^\d{4}$/.test(roll_number)) {
+        toast.error("Roll number must be exactly 4 digits.");
+        setSubmitting(false);
+        return;
+      }
+
       const payload = {
         full_name: String(fd.get("full_name") ?? ""),
-        admission_number: String(fd.get("admission_number") ?? ""),
-        roll_number: String(fd.get("roll_number") ?? ""),
+        admission_number,
+        roll_number,
         department: String(fd.get("department") ?? ""),
         semester: String(fd.get("semester") ?? ""),
-        email: String(fd.get("email") ?? ""),
-        phone: String(fd.get("phone") ?? ""),
+        email,
+        phone,
         gender: String(fd.get("gender") ?? "Other") as "Male" | "Female" | "Other",
         address: String(fd.get("address") ?? ""),
         parent_name: String(fd.get("parent_name") ?? ""),
@@ -127,15 +184,15 @@ function ApplyForm() {
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 grid gap-4 md:grid-cols-2">
-          <Field label="Full Name" name="full_name" required />
-          <Field label="Admission Number" name="admission_number" required />
-          <Field label="Roll Number" name="roll_number" required />
-          <Field label="Department" name="department" required placeholder="e.g. B.Sc Computer Science" />
-          <Select label="Semester" name="semester" required options={["1","2","3","4","5","6"]} />
-          <Select label="Gender" name="gender" required options={["Male","Female","Other"]} />
-          <Field label="Email" name="email" type="email" required />
-          <Field label="Mobile Number" name="phone" type="tel" required />
+        <form key={prevApp?.id ?? "new"} onSubmit={onSubmit} className="mt-6 grid gap-4 md:grid-cols-2">
+          <Field label="Full Name" name="full_name" required defaultValue={prevApp?.full_name} />
+          <Field label="Admission Number" name="admission_number" required pattern="\d{8}" title="Admission Number must be exactly 8 digits" maxLength={8} defaultValue={prevApp?.admission_number} />
+          <Field label="Roll Number" name="roll_number" required pattern="\d{4}" title="Roll Number must be exactly 4 digits" maxLength={4} defaultValue={prevApp?.roll_number} />
+          <Field label="Department" name="department" required placeholder="e.g. B.Sc Computer Science" defaultValue={prevApp?.department} />
+          <Select label="Semester" name="semester" required options={["1","2","3","4","5","6"]} defaultValue={prevApp?.semester} />
+          <Select label="Gender" name="gender" required options={["Male","Female","Other"]} defaultValue={prevApp?.gender} />
+          <Field label="Email" name="email" type="email" required value={userEmail} readOnly />
+          <Field label="Mobile Number" name="phone" type="tel" required pattern="\d{10}" title="Mobile Number must be exactly 10 digits" maxLength={10} defaultValue={prevApp?.phone} />
           <div className="md:col-span-2">
             <Label>Selected Course</Label>
             <input
@@ -166,7 +223,7 @@ function Label({ children }: { children: React.ReactNode }) {
   return <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{children}</label>;
 }
 
-function Field({ label, name, type = "text", required, placeholder }: { label: string; name: string; type?: string; required?: boolean; placeholder?: string }) {
+function Field({ label, name, type = "text", required, placeholder, pattern, title, maxLength, value, defaultValue, readOnly }: { label: string; name: string; type?: string; required?: boolean; placeholder?: string; pattern?: string; title?: string; maxLength?: number; value?: string; defaultValue?: string; readOnly?: boolean }) {
   return (
     <div>
       <Label>{label}{required && <span className="text-destructive"> *</span>}</Label>
@@ -175,20 +232,26 @@ function Field({ label, name, type = "text", required, placeholder }: { label: s
         type={type}
         required={required}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-2"
+        pattern={pattern}
+        title={title}
+        maxLength={maxLength}
+        value={value}
+        defaultValue={defaultValue}
+        readOnly={readOnly}
+        className={`mt-1 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-2 ${readOnly ? "opacity-70 bg-muted cursor-not-allowed" : ""}`}
       />
     </div>
   );
 }
 
-function Select({ label, name, options, required }: { label: string; name: string; options: string[]; required?: boolean }) {
+function Select({ label, name, options, required, defaultValue }: { label: string; name: string; options: string[]; required?: boolean; defaultValue?: string }) {
   return (
     <div>
       <Label>{label}{required && <span className="text-destructive"> *</span>}</Label>
       <select
         name={name}
         required={required}
-        defaultValue=""
+        defaultValue={defaultValue || ""}
         className="mt-1 w-full rounded-lg border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-2"
       >
         <option value="" disabled>Select…</option>

@@ -4,8 +4,10 @@ import { Suspense } from "react";
 import { GraduationCap, Sparkles, Users, Trophy, Rocket, ArrowRight } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { CourseCard } from "@/components/course-card";
-import { listActiveCourses } from "@/lib/skillhub.functions";
+import { listActiveCourses, listMyApplications } from "@/lib/skillhub.functions";
 import { useHeroEnter, useRevealChildren, useCountUp } from "@/hooks/use-gsap";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState, useMemo } from "react";
 
 const coursesQuery = queryOptions({
   queryKey: ["public-courses"],
@@ -211,6 +213,19 @@ function FeaturedCourses() {
   const { data: courses = [] } = useQuery(coursesQuery);
   const featured = courses.slice(0, 6);
 
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
+  }, []);
+
+  const { data: myApps = [] } = useQuery({
+    queryKey: ["my-applications"],
+    queryFn: () => listMyApplications(),
+    enabled: signedIn,
+  });
+
+  const appliedIds = useMemo(() => new Set(myApps.map((a) => a.course_id)), [myApps]);
+
   // Don't render the section at all if there are no courses
   if (featured.length === 0) return null;
 
@@ -223,12 +238,12 @@ function FeaturedCourses() {
         </div>
         <Link to="/courses" className="text-sm font-semibold text-brand-2 hover:underline">View all →</Link>
       </div>
-      <FeaturedGrid featured={featured} />
+      <FeaturedGrid featured={featured} appliedIds={appliedIds} />
     </section>
   );
 }
 
-function FeaturedGrid({ featured }: { featured: Awaited<ReturnType<typeof listActiveCourses>> }) {
+function FeaturedGrid({ featured, appliedIds }: { featured: Awaited<ReturnType<typeof listActiveCourses>>, appliedIds: Set<string> }) {
   const ref = useRevealChildren<HTMLDivElement>(":scope > *", { stagger: 0.09, y: 36 });
   return (
     <div ref={ref} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -244,6 +259,7 @@ function FeaturedGrid({ featured }: { featured: Awaited<ReturnType<typeof listAc
           seats={c.seats}
           start_date={c.start_date}
           image_url={c.image_url}
+          hasApplied={appliedIds.has(c.id)}
         />
       ))}
     </div>

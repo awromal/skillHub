@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { CourseCard } from "@/components/course-card";
-import { listActiveCourses } from "@/lib/skillhub.functions";
+import { listActiveCourses, listMyApplications } from "@/lib/skillhub.functions";
 import { useRevealChildren } from "@/hooks/use-gsap";
+import { supabase } from "@/integrations/supabase/client";
 
 const coursesQuery = queryOptions({
   queryKey: ["public-courses"],
@@ -51,6 +52,20 @@ function CoursesPage() {
 
 function CoursesGrid() {
   const { data: courses = [] } = useQuery(coursesQuery);
+  const [signedIn, setSignedIn] = useState(false);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
+  }, []);
+
+  const { data: myApps = [] } = useQuery({
+    queryKey: ["my-applications"],
+    queryFn: () => listMyApplications(),
+    enabled: signedIn,
+  });
+
+  const appliedIds = useMemo(() => new Set(myApps.map((a) => a.course_id)), [myApps]);
+
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -77,13 +92,13 @@ function CoursesGrid() {
       {filtered.length === 0 ? (
         <div className="rounded-2xl border bg-card py-20 text-center text-muted-foreground">No courses match your search.</div>
       ) : (
-        <RevealGrid courses={filtered} />
+        <RevealGrid courses={filtered} appliedIds={appliedIds} />
       )}
     </section>
   );
 }
 
-function RevealGrid({ courses }: { courses: Awaited<ReturnType<typeof listActiveCourses>> }) {
+function RevealGrid({ courses, appliedIds }: { courses: Awaited<ReturnType<typeof listActiveCourses>>, appliedIds: Set<string> }) {
   const ref = useRevealChildren<HTMLDivElement>(":scope > *", { stagger: 0.07, y: 30 });
   return (
     <div ref={ref} key={courses.map((c) => c.id).join(",")} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,6 +114,7 @@ function RevealGrid({ courses }: { courses: Awaited<ReturnType<typeof listActive
           seats={c.seats}
           start_date={c.start_date}
           image_url={c.image_url}
+          hasApplied={appliedIds.has(c.id)}
         />
       ))}
     </div>

@@ -11,6 +11,7 @@ export interface CourseCardProps {
   seats: number;
   start_date: string | null;
   image_url: string | null;
+  hasApplied?: boolean;
 }
 
 export function CourseCard(c: CourseCardProps) {
@@ -42,13 +43,22 @@ export function CourseCard(c: CourseCardProps) {
         </dl>
         <div className="mt-5 flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="h-3.5 w-3.5" /> Open</span>
-          <Link
-            to="/apply/$courseId"
-            params={{ courseId: c.id }}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:bg-brand-2"
-          >
-            Apply Now
-          </Link>
+          {c.hasApplied ? (
+            <Link
+              to="/my-applications"
+              className="rounded-lg border border-brand text-brand px-4 py-2 text-sm font-semibold transition hover:bg-brand hover:text-white"
+            >
+              Applied ✓
+            </Link>
+          ) : (
+            <Link
+              to="/apply/$courseId"
+              params={{ courseId: c.id }}
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:bg-brand-2"
+            >
+              Apply Now
+            </Link>
+          )}
         </div>
       </div>
     </article>
