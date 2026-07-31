@@ -220,6 +220,7 @@ export function SiteFooter() {
               { href: "/courses", label: "Browse Courses" },
               { href: "/#about", label: "About Skill Hub" },
               { href: "/auth", label: "Student Login" },
+              { href: "/auth?tab=admin", label: "Admin Login" },
             ].map((l) => (
               <li key={l.href}>
                 <a href={l.href} className="inline-flex items-center gap-1.5 hover:opacity-100 hover:underline underline-offset-4 opacity-80 transition">

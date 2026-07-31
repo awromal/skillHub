@@ -30,7 +30,16 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const isAdmin = search.tab === "admin";
+
+  const handleTabChange = (tab: "student" | "admin") => {
+    navigate({
+      to: "/auth",
+      search: { ...search, tab },
+      replace: true,
+    });
+  };
 
   return (
     <div className="grid min-h-screen bg-gradient-to-br from-brand via-brand to-brand-2 place-items-center px-4 py-10">
@@ -43,9 +52,63 @@ function AuthPage() {
         </Link>
 
         <div className="rounded-2xl bg-card p-4 sm:p-6 shadow-2xl ring-1 ring-white/10">
+          {/* Tab Navigation for Student vs Admin */}
+          <div className="mb-6 flex rounded-xl bg-muted p-1 border border-border/50">
+            <button
+              type="button"
+              onClick={() => handleTabChange("student")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs sm:text-sm transition-all ${
+                !isAdmin
+                  ? "bg-background text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground font-medium"
+              }`}
+            >
+              <GraduationCap className="h-4 w-4 text-brand" />
+              Student Login
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("admin")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs sm:text-sm transition-all ${
+                isAdmin
+                  ? "bg-background text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground font-medium"
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4 text-brand-2" />
+              Admin Login
+            </button>
+          </div>
 
           {isAdmin ? <AdminPane /> : <StudentPane next={search.next} />}
         </div>
+
+        <div className="mt-4 text-center text-xs text-white/80">
+          {!isAdmin ? (
+            <p>
+              Are you an administrator?{" "}
+              <button
+                type="button"
+                onClick={() => handleTabChange("admin")}
+                className="font-bold underline text-white hover:text-white/90 cursor-pointer"
+              >
+                Sign in as Admin
+              </button>
+            </p>
+          ) : (
+            <p>
+              Are you a student?{" "}
+              <button
+                type="button"
+                onClick={() => handleTabChange("student")}
+                className="font-bold underline text-white hover:text-white/90 cursor-pointer"
+              >
+                Sign in as Student
+              </button>
+            </p>
+          )}
+        </div>
+
         <p className="mt-6 text-center text-xs text-white/70">
           © {new Date().getFullYear()} SB Skill Hub
         </p>
