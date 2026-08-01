@@ -144,7 +144,7 @@ function StudentPane({ next }: { next?: string }) {
 async function handleGoogleSignIn(next?: string) {
   const origin = typeof window !== "undefined" && window.location.origin
     ? window.location.origin
-    : "https://skill-hub-lovat.vercel.app";
+    : "https://sbskillhub-site.vercel.app";
   const targetPath = next && next.startsWith("/") ? next : "/my-applications";
   const redirectTo = `${origin}${targetPath}`;
   const { error } = await supabase.auth.signInWithOAuth({
