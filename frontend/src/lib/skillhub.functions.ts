@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 function createSupabaseFetch(key: string): typeof fetch {
   return (input, init) => {
@@ -99,7 +100,7 @@ function generateAppId() {
 }
 
 export const submitApplication = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: unknown) => applicationSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -167,7 +168,7 @@ export const submitApplication = createServerFn({ method: "POST" })
 
 // ---------- Student: check if applied ----------
 export const checkHasApplied = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: { courseId: string }) => z.object({ courseId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: existingApp } = await context.supabase
@@ -181,7 +182,7 @@ export const checkHasApplied = createServerFn({ method: "GET" })
 
 // ---------- Student: get latest application ----------
 export const getLatestApplication = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("applications")
@@ -196,7 +197,7 @@ export const getLatestApplication = createServerFn({ method: "GET" })
 
 // ---------- Student: list my own applications ----------
 export const listMyApplications = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("applications")
@@ -209,7 +210,7 @@ export const listMyApplications = createServerFn({ method: "GET" })
 
 // ---------- Admin: list all applications ----------
 export const listApplications = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
       const { data, error } = await context.supabase
@@ -225,7 +226,7 @@ export const listApplications = createServerFn({ method: "GET" })
 
 // ---------- Admin: delete application ----------
 export const deleteApplication = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("applications").delete().eq("id", data.id);
@@ -235,7 +236,7 @@ export const deleteApplication = createServerFn({ method: "POST" })
 
 // ---------- Admin: list all courses (incl inactive) ----------
 export const listAllCourses = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
       const { data, error } = await context.supabase
@@ -264,7 +265,7 @@ const courseSchema = z.object({
 });
 
 export const upsertCourse = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: unknown) => courseSchema.parse(d))
   .handler(async ({ data, context }) => {
     if (data.id) {
@@ -287,7 +288,7 @@ export const upsertCourse = createServerFn({ method: "POST" })
 
 // ---------- Admin: delete course ----------
 export const deleteCourse = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("courses").delete().eq("id", data.id);
@@ -297,7 +298,7 @@ export const deleteCourse = createServerFn({ method: "POST" })
 
 // ---------- Admin: toggle course status ----------
 export const toggleCourseStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: { id: string; status: "active" | "inactive" }) =>
     z.object({ id: z.string().uuid(), status: z.enum(["active", "inactive"]) }).parse(d),
   )
@@ -312,7 +313,7 @@ export const toggleCourseStatus = createServerFn({ method: "POST" })
 
 // ---------- Admin: dashboard stats ----------
 export const dashboardStats = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
       const [coursesRes, appsRes, todayRes] = await Promise.all([
@@ -340,7 +341,7 @@ export const dashboardStats = createServerFn({ method: "GET" })
 // ---------- Admin: check current user is admin ----------
 export const checkIsAdmin = createServerFn({ method: "POST" })
   .inputValidator((d?: { userId?: string; email?: string }) => d)
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

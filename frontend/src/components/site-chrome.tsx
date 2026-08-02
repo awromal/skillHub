@@ -93,25 +93,28 @@ export function SiteHeader() {
           {/* Divider */}
           <div className="mx-2 h-5 w-px bg-border" />
 
-          {user ? (
-            <div className="flex items-center gap-1.5">
+          <Link
+            to="/courses"
+            className="ml-1 mr-3 inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-sm font-bold text-white shadow-md shadow-brand/20 transition hover:-translate-y-px hover:bg-brand-2 hover:shadow-lg"
+          >
+            Apply Now
+          </Link>
 
+          {user ? (
+            <div className="flex items-center gap-3 border-l pl-3 border-border">
+              <span className="text-sm font-medium text-foreground/80 flex items-center gap-1.5 bg-accent/50 px-3 py-1.5 rounded-full border">
+                <UserIcon className="h-4 w-4 text-brand" />
+                {user.email}
+              </span>
               <button
                 onClick={signOut}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-accent"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground/70 transition hover:bg-accent hover:text-destructive"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign out
               </button>
             </div>
           ) : null}
-
-          <Link
-            to="/courses"
-            className="ml-1 inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-sm font-bold text-white shadow-md shadow-brand/20 transition hover:-translate-y-px hover:bg-brand-2 hover:shadow-lg"
-          >
-            Apply Now
-          </Link>
         </nav>
 
         {/* ── Mobile hamburger ── */}
@@ -146,6 +149,11 @@ export function SiteHeader() {
             {user && (
               <>
                 <div className="my-1.5 border-t" />
+
+                <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground/80 bg-accent/30 rounded-xl mb-1">
+                  <UserIcon className="h-4 w-4 text-brand" />
+                  <span className="truncate">{user.email}</span>
+                </div>
 
                 <button
                   onClick={() => { setOpen(false); signOut(); }}
